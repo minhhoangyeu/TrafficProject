@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Traffic.Data.EF": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Staging"
+      }
+    }
+  }
+}

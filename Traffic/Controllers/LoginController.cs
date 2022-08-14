@@ -24,18 +24,13 @@ namespace Traffic.Api.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login([FromBody] LoginRequest login)
+        public async Task<IActionResult> Authenticate([FromBody] LoginRequest request)
         {
-            var user =  _userService.Authenticate(login);
-            var token =_JwtUtils.GenerateToken(user);
-            //var claims = new[]
-            //{
-            //    new Claim(ClaimTypes.Name, login.UserName),
-            //    new Claim("UserId", user.Id.ToString()),
-            //    new Claim("Roles", user.Role.ToString())
-            //};
-            return Ok(new LoginResponse { Successful = true, Token = token });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var result = await _userService.Authencate(request);
+            return Ok(result);
         }
-       
+
     }
 }

@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using System.Threading.Tasks;
 using Traffic.Application.Dtos;
 using Traffic.Application.Interfaces;
 using Traffic.Application.Models.User;
@@ -15,47 +17,74 @@ namespace Traffic.Api.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateUser(UserCreateRequest request)
+        [AllowAnonymous]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            _userService.Register(request);
-            return Ok(new { message = "Registration successful" });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _userService.Register(request);
+            if (!result.IsSuccessed)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
-        public  IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var user = _userService.GetById(id);
-            if(user ==null)
-                return NotFound(new { StatusCode = (int)HttpStatusCode.NotFound, message = "User not found" });
-            UserDto dto = new UserDto()
-            {
-                Id = user.Id,
-                Email = user.Email,
-                UserName = user.Username,
-                Phone = user.Phone,
-                Address = user.Address
-            };
-            return Ok(dto);
+            var user = await _userService.GetById(id);
+            return Ok(user);
+        }
+
+        [HttpPost("searchuser")]
+        public async Task<IActionResult> SearchUser([FromQuery] GetUserPagingRequest request)
+        {
+            var users = await _userService.GetUsersPaging(request);
+            return Ok(users);
         }
 
         [HttpPut]
-        public IActionResult Update(UserUpdateRequest model)
+        public async Task<IActionResult> Update(UserUpdateRequest request)
         {
-            _userService.Update(model);
-            return Ok(new { message = "User updated successfully" });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _userService.Update(request);
+            if (!result.IsSuccessed)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
         }
         [HttpPut("change-password")]
-        public IActionResult ChangePassword( [FromBody] UserPasswordChangeRequest request)
+        public async Task<IActionResult> ChangePassword([FromBody] UserPasswordChangeRequest request)
         {
-            _userService.ChangePassword(request);
-            return Ok(new { message = "Password updated successfully" });
-        }
+            var result = await _userService.ChangePassword(request);
+            if (!result.IsSuccessed)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
 
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        }
+        [HttpPut("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-            _userService.Delete(id);
-            return Ok(new { message = "User deleted successfully" });
+            var result = await _userService.ForgotPassword(request);
+            if (!result.IsSuccessed)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var result = await _userService.Delete(id);
+            return Ok(result);
         }
     }
 }

@@ -23,7 +23,7 @@ namespace Traffic.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>()
-                .HasIndex(b => b.Username)
+                .HasIndex(b => b.UserName)
                  .IsUnique()
                 .HasFilter(null);
             modelBuilder.Entity<User>()

@@ -205,7 +205,7 @@ namespace Traffic.Data.Migrations
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Username")
+                    b.Property<string>("UserName")
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
 
@@ -214,7 +214,7 @@ namespace Traffic.Data.Migrations
                     b.HasIndex("IpAddress")
                         .IsUnique();
 
-                    b.HasIndex("Username")
+                    b.HasIndex("UserName")
                         .IsUnique();
 
                     b.ToTable("Users");

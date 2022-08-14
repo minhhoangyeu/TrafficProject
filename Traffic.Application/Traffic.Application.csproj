@@ -13,6 +13,7 @@
     <PackageReference Include="Confluent.SchemaRegistry.Serdes" Version="1.3.0" />
     <PackageReference Include="EntityFrameworkCore.Triggered" Version="2.3.2" />
     <PackageReference Include="EPPlus.Core" Version="1.5.4" />
+    <PackageReference Include="FluentValidation" Version="11.2.0" />
     <PackageReference Include="Hangfire.Core" Version="1.7.28" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.13" />

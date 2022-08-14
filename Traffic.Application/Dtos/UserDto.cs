@@ -9,7 +9,6 @@ namespace Traffic.Application.Dtos
         public string Email { get; set; }
         public string Phone { get; set; }
         public string Name { get; set; }
-        public string PasswordHash { get; set; }
         public string Address { get; set; }
         public string Role { get; set; }
         public int LevelId { get; set; }
@@ -18,5 +17,6 @@ namespace Traffic.Application.Dtos
         public decimal Balance { get; set; }
         public string Status { get; set; }
         public string Avatar { get; set; }
+        public string Token { get; set; }
     }
 }

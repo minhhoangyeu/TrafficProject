@@ -1,0 +1,11 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/**
+**/.vs/**
+/**/bin/**
+/**/obj
+*.user
+/PCMS/.config
+/PCMS/Properties/PublishProfiles

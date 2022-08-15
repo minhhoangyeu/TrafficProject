@@ -23,6 +23,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Traffic.Api.Middlewares;
+using FluentValidation.AspNetCore;
+using Traffic.Application.Models.User;
+using FluentValidation;
 
 namespace Traffic
 {
@@ -86,6 +89,8 @@ namespace Traffic
             services.AddTransient<IEmailService, EmailService>();
             services.AddScoped<IJwtUtils, JwtUtils>();
             services.AddHttpContextAccessor();
+            services.AddControllers()
+              .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<LoginRequestValidator>());
 
             // Config Authen
             // services.AddAuthentication("BasicAuthentication").AddScheme<AuthenticationSchemeOptions, TrafficAuthenticationHandler>("BasicAuthentication", null);

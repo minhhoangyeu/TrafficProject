@@ -17,6 +17,7 @@ using Traffic.Application.Models.Common;
 using Traffic.Application.Models.User;
 using Traffic.Utilities.Helpers;
 using Traffic.Application.Dtos;
+using static Traffic.Utilities.Enums;
 
 namespace Traffic.Application.Implementation
 {
@@ -43,6 +44,10 @@ namespace Traffic.Application.Implementation
 
             if (passwordDecrypt != request.Password)
                 return new ApiErrorResult<UserDto>("Mật khẩu không đúng");
+            if (user.Status == UserStatus.Locked.ToString())
+                return new ApiErrorResult<UserDto>("Tài khoản đã bị khóa");
+            if (user.Status == UserStatus.Pending.ToString())
+                return new ApiErrorResult<UserDto>("Tài khoản chưa được kích hoạt");
 
             var claims = new[]
            {
@@ -109,16 +114,11 @@ namespace Traffic.Application.Implementation
         public async Task<ApiResult<bool>> ForgotPassword(ForgotPasswordRequest request)
         {
             var query = _userRepository.FindAll();
-            if (request.UserName != null)
+            if (request.Account != null)
             {
-                query = query.Where(x => x.UserName.Equals(request.UserName));
+                query = query.Where(x => x.UserName.Equals(request.Account) || x.Email.Equals(request.Account));
 
             }
-            if (request.Email != null)
-            {
-                query = query.Where(x => x.Email.Equals(request.Email));
-            }
-
             var user = await query.FirstOrDefaultAsync();
             if (user == null)
                 return new ApiErrorResult<bool>("Tài khoản hoặc email không tồn tại");
@@ -196,19 +196,28 @@ namespace Traffic.Application.Implementation
 
         public async Task<ApiResult<bool>> Register(RegisterRequest request)
         {
-            var userName = _userRepository.FindAll(x => x.UserName == request.UserName).SingleOrDefault();
-            if (userName != null)
+            var user = _userRepository.FindAll(x => x.UserName == request.UserName || x.Email == request.Email || x.IpAddress == request.IpAddress)
+                .Select(u => new User()
+                {
+                    UserName = u.UserName,
+                    Email = u.Email,
+                    IpAddress = u.IpAddress
+                }).SingleOrDefault();
+            if (user != null && user.UserName == request.UserName)
             {
                 return new ApiErrorResult<bool>("Tài khoản đã tồn tại");
             }
-            var userEmail = _userRepository.FindAll(x => x.Email == request.Email).SingleOrDefault();
-            if (userEmail != null)
+            if (user != null && user.Email == request.Email)
             {
                 return new ApiErrorResult<bool>("Emai đã tồn tại");
             }
+            if (user != null && user.IpAddress == request.IpAddress)
+            {
+                return new ApiErrorResult<bool>("Ipaddress đã được đăng ký tài khoản trước đó");
+            }
             string password = Cryptography.EncryptString(request.Password);
             // will using automap for this manual
-            var user = new User()
+            var userEntity = new User()
             {
                 Email = request.Email,
                 UserName = request.UserName,
@@ -217,6 +226,7 @@ namespace Traffic.Application.Implementation
                 PasswordHash = password,
                 Address = request.Address,
                 Role = request.Role,
+                Status = UserStatus.Pending.ToString(),
                 LevelId = 1,
                 Gender = request.Gender,
                 IpAddress = request.IpAddress,
@@ -226,7 +236,7 @@ namespace Traffic.Application.Implementation
                 CreatedDate = System.DateTime.Now
 
             };
-            _userRepository.Add(user);
+            _userRepository.Add(userEntity);
             await _unitOfWork.Commit();
 
             return new ApiSuccessResult<bool>();
@@ -243,6 +253,10 @@ namespace Traffic.Application.Implementation
             if (request.Email != null)
             {
                 query = query.Where(x => x.Email.Equals(request.Email));
+            }
+            if (request.Phone != null)
+            {
+                query = query.Where(x => x.Phone.Equals(request.Phone));
             }
             var user = await query.FirstOrDefaultAsync();
             if (user == null)
@@ -276,73 +290,28 @@ namespace Traffic.Application.Implementation
             var user = _userRepository.FindAll().Where(u => u.Id == request.Id).FirstOrDefault();
 
             user.Name = request.Name;
-            user.Email = request.Name;
-            user.Phone = request.Name;
-            user.Gender = request.Name;
-            user.Avatar = request.Name;
-            user.Address = request.Name;
+            user.Email = request.Email;
+            user.Phone = request.Phone;
+            user.Gender = request.Gender;
+            user.Avatar = request.Avatar;
+            user.Address = request.Address;
             _userRepository.Update(user);
             await _unitOfWork.Commit();
 
             return new ApiSuccessResult<bool>();
         }
 
-        //public IEnumerable<User> GetAll()
-        //{
-        //    throw new NotImplementedException();
-        //}
-        //public void Register(UserCreateRequest model)
-        //{
-        //    // validate
-        //    var userEntity = _userRepository.FindAll().Where(u => u.Username == model.UserName).FirstOrDefault();
-        //    if (userEntity != null)
-        //        throw new AppException("Username '" + model.UserName + "' is already taken");
-        //    string password = Cryptography.EncryptString(model.PasswordHash);
-        //    var user = new User()
-        //    {
-        //        Email = model.Email,
-        //        Username = model.UserName,
-        //        Name = model.Name,
-        //        Phone = model.Phone,
-        //        PasswordHash = password,
-        //        Address = model.Address,
-        //        Role = model.Role,
-        //        LevelId = model.LevelId,
-        //        Gender = model.Gender,
-        //        IpAddress = model.IpAddress,
-        //        Balance = 0,
-        //        Avatar = model.Avatar,
-        //        IsDeleted = false,
-        //        CreatedDate = System.DateTime.Now
-
-        //    };
-        //    // save user
-        //    _userRepository.Add(user);
-        //    _unitOfWork.Commit();
-
-        //}
-
-
-        //public void ChangePassword(UserPasswordChangeRequest model)
-        //{
-        //    var user = _userRepository.FindAll().Where(u => u.Id == model.Id).FirstOrDefault();
-        //    if (user == null)
-        //        throw new KeyNotFoundException("User not found");
-        //    var passwordDecrypt = Cryptography.DecryptString(user.PasswordHash);
-
-        //    if (passwordDecrypt != model.CurrentPassword)
-        //        throw new AppException("CurrentPassword is incorrect");
-        //    var passwordEncrypt = Cryptography.EncryptString(model.NewPassword);
-        //    user.PasswordHash = passwordEncrypt;
-        //    _userRepository.Update(user);
-        //    _unitOfWork.Commit();
-        //}
-
-        //public User GetById(int id)
-        //{
-        //    var user = _userRepository.FindAll().Where(u => u.Id == id).FirstOrDefault();
-        //    return user;
-        //}
-
+        public async Task<ApiResult<bool>> UpdateStatus(int userId, string status)
+        {
+            var user = await _userRepository.FindAll().Where(u => u.Id == userId).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return new ApiErrorResult<bool>("User không tồn tại");
+            }
+            user.Status = status;
+            _userRepository.Update(user);
+            await _unitOfWork.Commit();
+            return new ApiSuccessResult<bool>();
+        }
     }
 }

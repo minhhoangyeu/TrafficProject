@@ -86,5 +86,12 @@ namespace Traffic.Api.Controllers
             var result = await _userService.Delete(id);
             return Ok(result);
         }
+
+        [HttpPut("Status")]
+        public async Task<IActionResult> UpdateStatus(int userId, string status)
+        {
+            var result = await _userService.UpdateStatus(userId, status);
+            return Ok(result);
+        }
     }
 }

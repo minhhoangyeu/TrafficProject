@@ -6,7 +6,6 @@ namespace Traffic.Application.Models.User
 {
     public class ForgotPasswordRequest
     {
-        public string UserName { get; set; }
-        public string Email { get; set; }
+        public string Account { get; set; }
     }
 }

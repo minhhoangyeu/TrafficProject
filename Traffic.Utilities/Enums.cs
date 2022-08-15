@@ -61,13 +61,14 @@ namespace Traffic.Utilities
             MEDIUM,
             LOW
         }
-
-        public enum CardType
+        public enum UserStatus
         {
-            N2,
-            N4
+            Pending = 0,
+            Activated,
+            DeActivated,
+            Locked,
+            IsSuperAdmin
         }
-
         public enum StatisticType
         {
             ISSUE_CARDS_BY_DATE = 1,

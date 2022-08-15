@@ -21,5 +21,6 @@ namespace Traffic.Application.Interfaces
         Task<ApiResult<UserDto>> SearchUser(SearchUserRequest request);
         Task<ApiResult<bool>> ForgotPassword(ForgotPasswordRequest request);
         Task<ApiResult<bool>> ChangePassword(UserPasswordChangeRequest request);
+        Task<ApiResult<bool>> UpdateStatus(int userId, string status);
     }
 }

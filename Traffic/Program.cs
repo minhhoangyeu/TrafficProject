@@ -31,7 +31,7 @@ namespace Traffic
                 {
                     using (var context = new TrafficContext(services.GetRequiredService<DbContextOptions<TrafficContext>>()))
                     {
-                        //await context.Database.MigrateAsync();
+                        await context.Database.MigrateAsync();
                         var dbInitializer = services.GetService<DbInitializer>();
                         dbInitializer.Seed().Wait();
                     }

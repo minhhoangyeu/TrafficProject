@@ -18,7 +18,7 @@ namespace Traffic.Api.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        public async Task<IActionResult> Register([FromForm] RegisterRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -38,7 +38,7 @@ namespace Traffic.Api.Controllers
             return Ok(user);
         }
 
-        [HttpPost("searchuser")]
+        [HttpGet("searchuser")]
         public async Task<IActionResult> SearchUser([FromQuery] GetUserPagingRequest request)
         {
             var users = await _userService.GetUsersPaging(request);
@@ -46,12 +46,12 @@ namespace Traffic.Api.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> Update(UserUpdateRequest request)
+        public async Task<IActionResult> UpdateUserInfo([FromForm] UserUpdateRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = await _userService.Update(request);
+            var result = await _userService.UpdateInfo(request);
             if (!result.IsSuccessed)
             {
                 return BadRequest(result);
@@ -70,6 +70,7 @@ namespace Traffic.Api.Controllers
 
         }
         [HttpPut("forgot-password")]
+        [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
             var result = await _userService.ForgotPassword(request);
@@ -92,6 +93,25 @@ namespace Traffic.Api.Controllers
         {
             var result = await _userService.UpdateStatus(userId, status);
             return Ok(result);
+        }
+        [HttpPut("UpdateAvatar")]
+        public async Task<IActionResult> UpdateAvatar([FromForm] UserAvatarRequest request)
+        {
+            var result = await _userService.UpdateAvatar(request);
+            return Ok(result);
+        }
+        [HttpDelete("DeleteAvatar")]
+        public async Task<IActionResult> DeleteAvatar(int id)
+        {
+            var result = await _userService.DeleteAvatar(id);
+            return Ok(result);
+        }
+        [HttpGet("active-user")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ActiveUser([FromQuery] string code)
+        {
+            var user = await _userService.Activate(code);
+            return Ok(user);
         }
     }
 }

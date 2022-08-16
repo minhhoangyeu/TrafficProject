@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using static Traffic.Utilities.Enums;
 using Traffic.Application.Models.SendEmail;
+using System.Net.Mail;
+using System.Net;
 
 namespace Traffic.Application.Interfaces
 {
@@ -22,13 +24,31 @@ namespace Traffic.Application.Interfaces
         public EmailService(IConfiguration configuration,IHttpContextAccessor httpContextAccessor)
         {
             _configuration = configuration;
-            _httpContextAccessor = httpContextAccessor;
         }
 
-        public Task<SendMailModel> SendMail()
+        public  Task SendEmail(string email, string subject, string message)
         {
-            throw new NotImplementedException();
+            SmtpClient client = new SmtpClient(_configuration["MailSettings:Server"])
+            {
+                UseDefaultCredentials = false,
+                Port = int.Parse(_configuration["MailSettings:Port"]),
+                EnableSsl = bool.Parse(_configuration["MailSettings:EnableSsl"]),
+                Credentials = new NetworkCredential(_configuration["MailSettings:UserName"], _configuration["MailSettings:Password"])
+            };
+
+            MailMessage mailMessage = new MailMessage
+            {
+                From = new MailAddress(_configuration["MailSettings:FromEmail"], _configuration["MailSettings:FromName"]),
+            };
+            mailMessage.To.Add(email);
+            mailMessage.Body = message;
+            mailMessage.Subject = subject;
+            mailMessage.IsBodyHtml = true;
+            client.Send(mailMessage);
+            return Task.CompletedTask;
         }
+
+
 
         //public async Task<SendEmailModel> SendMail()
         //{

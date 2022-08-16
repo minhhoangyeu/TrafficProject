@@ -88,6 +88,7 @@ namespace Traffic
             services.AddTransient<IUserCampaignService, UserCampaignService>();
             services.AddTransient<IEmailService, EmailService>();
             services.AddScoped<IJwtUtils, JwtUtils>();
+            services.AddTransient<IFileStorageService, FileStorageService>();
             services.AddHttpContextAccessor();
             services.AddControllers()
               .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<LoginRequestValidator>());
@@ -175,6 +176,7 @@ namespace Traffic
             //app.UseMiddleware<LoggerMiddleware>();
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
 
             app.UseRouting();
 

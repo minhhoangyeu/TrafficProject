@@ -14,7 +14,7 @@ namespace Traffic.Application.Interfaces
     {
         Task<ApiResult<UserDto>> Authencate(LoginRequest request);
         Task<ApiResult<bool>> Register(RegisterRequest request);
-        Task<ApiResult<bool>> Update(UserUpdateRequest request);
+        Task<ApiResult<bool>> UpdateInfo(UserUpdateRequest request);
         Task<ApiResult<PagedResult<UserDto>>> GetUsersPaging(GetUserPagingRequest request);
         Task<ApiResult<UserDto>> GetById(int id);
         Task<ApiResult<bool>> Delete(int id);
@@ -22,5 +22,8 @@ namespace Traffic.Application.Interfaces
         Task<ApiResult<bool>> ForgotPassword(ForgotPasswordRequest request);
         Task<ApiResult<bool>> ChangePassword(UserPasswordChangeRequest request);
         Task<ApiResult<bool>> UpdateStatus(int userId, string status);
+        Task<ApiResult<bool>> UpdateAvatar(UserAvatarRequest request);
+        Task<ApiResult<bool>> DeleteAvatar(int id);
+        Task<ApiResult<string>> Activate(string code);
     }
 }

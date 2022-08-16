@@ -18,6 +18,8 @@ using Traffic.Application.Models.User;
 using Traffic.Utilities.Helpers;
 using Traffic.Application.Dtos;
 using static Traffic.Utilities.Enums;
+using System.Net.Http.Headers;
+using System.IO;
 
 namespace Traffic.Application.Implementation
 {
@@ -27,12 +29,14 @@ namespace Traffic.Application.Implementation
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
-        public UserService(IConfiguration configuration, IRepository<User, int> userRepository, IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IFileStorageService _fileStorageService;
+        public UserService(IConfiguration configuration, IRepository<User, int> userRepository, IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService)
         {
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _configuration = configuration;
+            _fileStorageService = fileStorageService;
         }
 
         public async Task<ApiResult<UserDto>> Authencate(LoginRequest request)
@@ -78,7 +82,7 @@ namespace Traffic.Application.Implementation
             dto.IpAddress = user.IpAddress;
             dto.Balance = user.Balance;
             dto.Status = user.Status;
-            dto.Avatar = user.Avatar;
+            dto.Avatar = _fileStorageService.GetFileUrl(user.Avatar);
             dto.Token = writeToken;
 
             return new ApiSuccessResult<UserDto>(dto);
@@ -148,7 +152,7 @@ namespace Traffic.Application.Implementation
             dto.IpAddress = user.IpAddress;
             dto.Balance = user.Balance;
             dto.Status = user.Status;
-            dto.Avatar = user.Avatar;
+            dto.Avatar = _fileStorageService.GetFileUrl(user.Avatar);
             return new ApiSuccessResult<UserDto>(dto);
         }
 
@@ -179,9 +183,9 @@ namespace Traffic.Application.Implementation
                     IpAddress = x.IpAddress,
                     Balance = x.Balance,
                     Status = x.Status,
-                    Avatar = x.Avatar
+                    Avatar = _fileStorageService.GetFileUrl(x.Avatar)
 
-                }).ToListAsync();
+        }).ToListAsync();
 
             //4. Select and projection
             var pagedResult = new PagedResult<UserDto>()
@@ -231,11 +235,14 @@ namespace Traffic.Application.Implementation
                 Gender = request.Gender,
                 IpAddress = request.IpAddress,
                 Balance = 0,
-                Avatar = request.Avatar,
                 IsDeleted = false,
                 CreatedDate = System.DateTime.Now
 
             };
+            if (request.Avatar != null)
+            {
+                userEntity.Avatar = await this.SaveFile(request.Avatar);
+            }
             _userRepository.Add(userEntity);
             await _unitOfWork.Commit();
 
@@ -275,12 +282,12 @@ namespace Traffic.Application.Implementation
             dto.IpAddress = user.IpAddress;
             dto.Balance = user.Balance;
             dto.Status = user.Status;
-            dto.Avatar = user.Avatar;
+            dto.Avatar = _fileStorageService.GetFileUrl(user.Avatar);
             return new ApiSuccessResult<UserDto>(dto);
 
         }
 
-        public async Task<ApiResult<bool>> Update(UserUpdateRequest request)
+        public async Task<ApiResult<bool>> UpdateInfo(UserUpdateRequest request)
         {
             var query = _userRepository.FindAll();
             if (await query.AnyAsync(x => x.Email == request.Email && x.Id != request.Id))
@@ -293,7 +300,11 @@ namespace Traffic.Application.Implementation
             user.Email = request.Email;
             user.Phone = request.Phone;
             user.Gender = request.Gender;
-            user.Avatar = request.Avatar;
+            user.UpdatedDate = DateTime.Now;
+            if (request.Avatar != null)
+            {
+                user.Avatar = await this.SaveFile(request.Avatar);
+            }
             user.Address = request.Address;
             _userRepository.Update(user);
             await _unitOfWork.Commit();
@@ -301,6 +312,37 @@ namespace Traffic.Application.Implementation
             return new ApiSuccessResult<bool>();
         }
 
+        public async Task<ApiResult<bool>> UpdateAvatar(UserAvatarRequest request)
+        {
+            var user = _userRepository.FindAll().Where(u => u.Id == request.Id).FirstOrDefault();
+            if (user == null)
+            {
+                return new ApiErrorResult<bool>("User không tồn tại");
+            }
+            if (request.Avatar != null)
+            {
+                user.Avatar = await this.SaveFile(request.Avatar);
+                user.UpdatedDate = DateTime.Now;
+            }
+            _userRepository.Update(user);
+            await _unitOfWork.Commit();
+
+            return new ApiSuccessResult<bool>();
+        }
+        public async Task<ApiResult<bool>> DeleteAvatar(int id)
+        {
+            var user = _userRepository.FindAll().Where(u => u.Id == id).FirstOrDefault();
+            if (user == null)
+            {
+                return new ApiErrorResult<bool>("User không tồn tại");
+            }
+            user.Avatar = null;
+            user.UpdatedDate = DateTime.Now;
+            _userRepository.Update(user);
+            await _unitOfWork.Commit();
+
+            return new ApiSuccessResult<bool>();
+        }
         public async Task<ApiResult<bool>> UpdateStatus(int userId, string status)
         {
             var user = await _userRepository.FindAll().Where(u => u.Id == userId).FirstOrDefaultAsync();
@@ -312,6 +354,18 @@ namespace Traffic.Application.Implementation
             _userRepository.Update(user);
             await _unitOfWork.Commit();
             return new ApiSuccessResult<bool>();
+        }
+        private async Task<string> SaveFile(IFormFile file)
+        {
+            var originalFileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName.Trim('"');
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(originalFileName)}";
+            await _fileStorageService.SaveFileAsync(file.OpenReadStream(), fileName);
+            return fileName;
+        }
+
+        public async Task<ApiResult<string>> Activate(string code)
+        {
+            return new ApiSuccessResult<string>("Kích hoạt tài khoản thành công");
         }
     }
 }

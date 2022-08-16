@@ -5,6 +5,6 @@ namespace Traffic.Application.Interfaces
 {
     public interface IEmailService
     {
-        Task<SendMailModel> SendMail();
+        Task SendEmail(string email, string subject, string message);
     }
 }

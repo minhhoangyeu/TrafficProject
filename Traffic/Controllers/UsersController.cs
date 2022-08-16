@@ -1,19 +1,21 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
 using System.Threading.Tasks;
-using Traffic.Application.Dtos;
 using Traffic.Application.Interfaces;
 using Traffic.Application.Models.User;
+using Traffic.Utilities.Helpers;
 
 namespace Traffic.Api.Controllers
 {
     public class UsersController : BaseController
     {
         private readonly IUserService _userService;
-        public UsersController(IUserService userService)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public UsersController(IUserService userService, IHttpContextAccessor httpContextAccessor)
         {
             _userService = userService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpPost]
@@ -28,6 +30,7 @@ namespace Traffic.Api.Controllers
             {
                 return BadRequest(result);
             }
+
             return Ok(result);
         }
 
@@ -110,8 +113,18 @@ namespace Traffic.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ActiveUser([FromQuery] string code)
         {
-            var user = await _userService.Activate(code);
-            return Ok(user);
+            var result = await _userService.Activate(code);
+            return Ok(result);
+        }
+        [HttpGet("test-active-user")]
+        [AllowAnonymous]
+        public async Task<IActionResult> geturl(int id)
+        {
+            var user = await _userService.GetById(id);
+            string emailDecode = Cryptography.EncryptString(user.ResultObj.Email);
+            var controller = "/api/Users/active-user?code=" + emailDecode;
+            var absUrl = string.Format("{0}://{1}{2}", _httpContextAccessor.HttpContext.Request.Scheme, _httpContextAccessor.HttpContext.Request.Host, controller);
+            return Ok(absUrl);
         }
     }
 }

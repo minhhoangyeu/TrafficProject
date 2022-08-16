@@ -30,13 +30,17 @@ namespace Traffic.Application.Implementation
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly IFileStorageService _fileStorageService;
-        public UserService(IConfiguration configuration, IRepository<User, int> userRepository, IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService)
+        private readonly IEmailService _emailService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public UserService(IConfiguration configuration, IRepository<User, int> userRepository, IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IHttpContextAccessor httpContextAccessor)
         {
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _configuration = configuration;
             _fileStorageService = fileStorageService;
+            _emailService = emailService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<ApiResult<UserDto>> Authencate(LoginRequest request)
@@ -185,7 +189,7 @@ namespace Traffic.Application.Implementation
                     Status = x.Status,
                     Avatar = _fileStorageService.GetFileUrl(x.Avatar)
 
-        }).ToListAsync();
+                }).ToListAsync();
 
             //4. Select and projection
             var pagedResult = new PagedResult<UserDto>()
@@ -245,7 +249,7 @@ namespace Traffic.Application.Implementation
             }
             _userRepository.Add(userEntity);
             await _unitOfWork.Commit();
-
+            await SendMailActivate(userEntity.Email,userEntity.Name);
             return new ApiSuccessResult<bool>();
         }
 
@@ -365,7 +369,47 @@ namespace Traffic.Application.Implementation
 
         public async Task<ApiResult<string>> Activate(string code)
         {
+            string emailDecode = Cryptography.DecryptString(code);
+            var user = _userRepository.FindAll().Where(u => u.Email == emailDecode).FirstOrDefault();
+            if (user == null)
+            {
+                return new ApiErrorResult<string>("Kích hoạt tài khoản không thành công");
+            }
+            user.UpdatedDate = DateTime.Now;
+            user.Status = UserStatus.Activated.ToString();
+            _userRepository.Update(user);
+            await _unitOfWork.Commit();
             return new ApiSuccessResult<string>("Kích hoạt tài khoản thành công");
+        }
+
+        private async Task SendMailActivate(string email, string name)
+        {
+            string emailDecode = Cryptography.EncryptString(email);
+            var controller = "/api/Users/active-user?code=" + emailDecode;
+            var absUrl = string.Format("{0}://{1}{2}", _httpContextAccessor.HttpContext.Request.Scheme, _httpContextAccessor.HttpContext.Request.Host, controller);
+            var message = BuildActivateUserTemplate(name, absUrl);
+            await _emailService.SendEmail(email, "Kích hoạt tài khoản", message);
+        }
+        private string BuildActivateUserTemplate(string name, string url)
+        {
+            var html = new StringBuilder();
+            html.Append("<h1>Welcome!</h1>" +
+               "< p > Hello < strong style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' >" + 
+               name +
+               "</ strong > ! < br />< br /> Thank you for registering on our platform.You're almost ready to start.<br /><br />Simply click the button below to confirm your email address and active your account.</p>" +
+               "< table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; margin: 30px auto; padding: 0; text-align: center; width: 100%;' width = '100%' cellspacing = '0' cellpadding = '0' align = 'center' >" +
+               "< tbody > < tr >< td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' align = 'center' >" +
+               "< table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' border = '0' width = '100%' cellspacing = '0' cellpadding = '0' >" +
+               "< tbody > < tr > < td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' align = 'center' >" +
+               "< table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' border = '0' cellspacing = '0' cellpadding = '0' >" +
+               "< tbody > < tr > < td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' >< a href='" +
+               url + 
+               "' style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; border-radius: 3px; color: #fff; display: inline-block; text-decoration: none; background-color: #16a1fd; border-top: 10px solid #16a1fd; border-right: 18px solid #16a1fd; border-bottom: 10px solid #16a1fd; border-left: 18px solid #16a1fd;' target = '_blank' > Confirm Email Address </ a ></ td >" +
+               "</ tr > </ tbody > </ table > </ td > </ tr > </ tbody > </ table > </ td > </ tr > </ tbody > </ table >" +
+               "< hr style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' />" +
+               "< p style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; color: #74787e; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left; margin-bottom: 0; padding-bottom: 0;' > Best Regards, < br /> Traffic Teams </ p >"
+               );
+            return html.ToString();
         }
     }
 }

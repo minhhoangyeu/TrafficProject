@@ -19,9 +19,7 @@ namespace Traffic.Application.Interfaces
     {
         private readonly IConfiguration _configuration;
 
-        private readonly IHttpContextAccessor _httpContextAccessor;
-
-        public EmailService(IConfiguration configuration,IHttpContextAccessor httpContextAccessor)
+        public EmailService(IConfiguration configuration)
         {
             _configuration = configuration;
         }

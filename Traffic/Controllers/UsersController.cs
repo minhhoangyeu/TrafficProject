@@ -41,7 +41,18 @@ namespace Traffic.Api.Controllers
             var user = await _userService.GetById(id);
             return Ok(user);
         }
-
+        [Route("profile")]
+        [HttpGet]
+        public async Task<IActionResult> GetProfile()
+        {
+            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor);
+            if (!string.IsNullOrEmpty(userId))
+            {
+                userId = "0";
+            }
+            var user = await _userService.GetById(int.Parse(userId));
+            return Ok(user);
+        }
         [HttpGet("searchuser")]
         public async Task<IActionResult> SearchUser([FromQuery] GetUserPagingRequest request)
         {

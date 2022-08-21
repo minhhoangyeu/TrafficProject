@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Traffic.Api.Authorization;
 using Traffic.Application.Interfaces;
 using Traffic.Application.Models.User;
 using Traffic.Utilities.Helpers;
@@ -53,7 +54,11 @@ namespace Traffic.Api.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-
+            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor);
+            if (!string.IsNullOrEmpty(userId))
+            {
+                request.Id = int.Parse(userId);
+            }
             var result = await _userService.UpdateInfo(request);
             if (!result.IsSuccessed)
             {
@@ -109,12 +114,27 @@ namespace Traffic.Api.Controllers
             var result = await _userService.DeleteAvatar(id);
             return Ok(result);
         }
+        [HttpGet("verify")]
+        public ContentResult Verify()
+        {
+            var html = "<div id='actionElement'><div class='mdl - card mdl - shadow--2dp firebaseui-container firebaseui - id - page - email - verification - failure'><div class='firebaseui - card - header'><h1 class='firebaseui - title'>Your account has been Activated</h1></div><div class='firebaseui - card - content'><p class='firebaseui - text'>Your account has already been used</p></div><div class='firebaseui - card - actions'></div></div></div>";
+            return base.Content(html, "text/html");
+        }
         [HttpGet("active-user")]
         [AllowAnonymous]
-        public async Task<IActionResult> ActiveUser([FromQuery] string code)
+        public ContentResult ActiveUser([FromQuery] string code)
         {
-            var result = await _userService.Activate(code);
-            return Ok(result);
+            string html = "";
+            var result =  _userService.Activate(code);
+            if (result.Result.IsSuccessed)
+            {
+                html = "<div id='actionElement'><div class='mdl - card mdl - shadow--2dp firebaseui-container firebaseui - id - page - email - verification - failure'><div class='firebaseui - card - header'><h1 class='firebaseui - title'>Your account has been Activated</h1></div><div class='firebaseui - card - content'><p class='firebaseui - text'>Your account has already been used</p></div><div class='firebaseui - card - actions'></div></div></div>";
+            }
+            else
+            {
+                 html = "<div>Failed ! Try verifying your email again.</div>";
+            }
+            return base.Content(html, "text/html");
         }
         [HttpGet("test-active-user")]
         [AllowAnonymous]

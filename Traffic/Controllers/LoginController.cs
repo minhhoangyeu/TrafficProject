@@ -14,13 +14,9 @@ namespace Traffic.Api.Controllers
     public class LoginController : ControllerBase
     {
         private readonly IUserService _userService;
-        private readonly IConfiguration _configuration;
-        private readonly IJwtUtils _JwtUtils;
-        public LoginController(IConfiguration configuration,IUserService userService, IJwtUtils JwtUtils)
+        public LoginController(IUserService userService)
         {
-            _configuration = configuration;
             _userService = userService;
-            _JwtUtils = JwtUtils;
         }
 
         [HttpPost]

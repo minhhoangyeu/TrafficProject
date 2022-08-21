@@ -1,8 +1,6 @@
 ﻿using Traffic.Data.Entities;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.IdentityModel.Tokens.Jwt;
@@ -28,16 +26,14 @@ namespace Traffic.Application.Implementation
         private readonly IRepository<User, int> _userRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IConfiguration _configuration;
         private readonly IFileStorageService _fileStorageService;
         private readonly IEmailService _emailService;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public UserService(IConfiguration configuration, IRepository<User, int> userRepository, IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IHttpContextAccessor httpContextAccessor)
+        public UserService(IRepository<User, int> userRepository, IUnitOfWork unitOfWork, IMapper mapper, IFileStorageService fileStorageService, IEmailService emailService, IHttpContextAccessor httpContextAccessor)
         {
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _configuration = configuration;
             _fileStorageService = fileStorageService;
             _emailService = emailService;
             _httpContextAccessor = httpContextAccessor;
@@ -56,21 +52,23 @@ namespace Traffic.Application.Implementation
                 return new ApiErrorResult<UserDto>("Tài khoản đã bị khóa");
             if (user.Status == UserStatus.Pending.ToString())
                 return new ApiErrorResult<UserDto>("Tài khoản chưa được kích hoạt");
-
-            var claims = new[]
-           {
-                new Claim(ClaimTypes.Email,user.Email),
-                new Claim(ClaimTypes.Role, user.Role),
-                new Claim(ClaimTypes.Name, request.UserName)
-            };
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Tokens:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            DateTime expirationDate = DateTime.Now.Date.AddMinutes(EnviromentConfig.ExpirationInMinutes);
+            long expiresAt = (long)(expirationDate - new DateTime(1970, 1, 1)).TotalSeconds;
             var tokenHandler = new JwtSecurityTokenHandler();
-            var token = new JwtSecurityToken(_configuration["Tokens:Issuer"],
-                _configuration["Tokens:Issuer"],
-                claims,
-                expires: DateTime.Now.AddHours(3),
-                signingCredentials: creds);
+            var key = Encoding.ASCII.GetBytes(EnviromentConfig.SecretKey);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                        new Claim(ClaimTypes.Sid,user.Id.ToString()),
+                        new Claim(ClaimTypes.Email,user.Email),
+                        new Claim(ClaimTypes.Role, user.Role),
+                        new Claim(ClaimTypes.Name, request.UserName)
+                }),
+                Expires = expirationDate,
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
             string writeToken = tokenHandler.WriteToken(token);
             //using mapper repplace for this manual
             UserDto dto = new UserDto();
@@ -249,7 +247,7 @@ namespace Traffic.Application.Implementation
             }
             _userRepository.Add(userEntity);
             await _unitOfWork.Commit();
-            await SendMailActivate(userEntity.Email,userEntity.Name);
+            await SendMailActivate(userEntity.Email, userEntity.Name);
             return new ApiSuccessResult<bool>();
         }
 
@@ -298,8 +296,11 @@ namespace Traffic.Application.Implementation
             {
                 return new ApiErrorResult<bool>("Emai đã tồn tại");
             }
-            var user = _userRepository.FindAll().Where(u => u.Id == request.Id).FirstOrDefault();
-
+            var user = query.FirstOrDefault(u => u.Id == request.Id);
+            if (user == null)
+            {
+                return new ApiErrorResult<bool>("Tài khoản không tồn tại");
+            }
             user.Name = request.Name;
             user.Email = request.Email;
             user.Phone = request.Phone;
@@ -365,12 +366,17 @@ namespace Traffic.Application.Implementation
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(originalFileName)}";
             await _fileStorageService.SaveFileAsync(file.OpenReadStream(), fileName);
             return fileName;
+
         }
 
         public async Task<ApiResult<string>> Activate(string code)
         {
-            string emailDecode = Cryptography.DecryptString(code);
-            var user = _userRepository.FindAll().Where(u => u.Email == emailDecode).FirstOrDefault();
+            try
+            {
+                code = Cryptography.DecryptString(code);
+            }
+            catch { }
+            var user = _userRepository.FindAll().Where(u => u.Email == code).FirstOrDefault();
             if (user == null)
             {
                 return new ApiErrorResult<string>("Kích hoạt tài khoản không thành công");
@@ -394,7 +400,7 @@ namespace Traffic.Application.Implementation
         {
             var html = new StringBuilder();
             html.Append("<h1>Welcome!</h1>" +
-               "< p > Hello < strong style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' >" + 
+               "< p > Hello < strong style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' >" +
                name +
                "</ strong > ! < br />< br /> Thank you for registering on our platform.You're almost ready to start.<br /><br />Simply click the button below to confirm your email address and active your account.</p>" +
                "< table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; margin: 30px auto; padding: 0; text-align: center; width: 100%;' width = '100%' cellspacing = '0' cellpadding = '0' align = 'center' >" +
@@ -403,7 +409,7 @@ namespace Traffic.Application.Implementation
                "< tbody > < tr > < td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' align = 'center' >" +
                "< table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' border = '0' cellspacing = '0' cellpadding = '0' >" +
                "< tbody > < tr > < td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' >< a href='" +
-               url + 
+               url +
                "' style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; border-radius: 3px; color: #fff; display: inline-block; text-decoration: none; background-color: #16a1fd; border-top: 10px solid #16a1fd; border-right: 18px solid #16a1fd; border-bottom: 10px solid #16a1fd; border-left: 18px solid #16a1fd;' target = '_blank' > Confirm Email Address </ a ></ td >" +
                "</ tr > </ tbody > </ table > </ td > </ tr > </ tbody > </ table > </ td > </ tr > </ tbody > </ table >" +
                "< hr style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' />" +

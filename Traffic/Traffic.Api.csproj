@@ -39,6 +39,8 @@
     <Folder Include="Content\MasterData\" />
     <Folder Include="Content\Templates\" />
     <Folder Include="Properties\PublishProfiles\" />
+    <Folder Include="Resource\Attachment\" />
+    <Folder Include="Resource\Avatar\" />
     <Folder Include="wwwroot\user-content\" />
   </ItemGroup>
 

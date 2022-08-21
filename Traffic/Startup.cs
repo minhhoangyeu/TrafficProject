@@ -26,6 +26,8 @@ using Traffic.Api.Middlewares;
 using FluentValidation.AspNetCore;
 using Traffic.Application.Models.User;
 using FluentValidation;
+using Traffic.Utilities.Helpers;
+using Microsoft.AspNetCore.Http;
 
 namespace Traffic
 {
@@ -41,27 +43,14 @@ namespace Traffic
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            EnviromentConfig.Config(Configuration);
+
             var connectionString = Configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<TrafficContext>(options =>
             {
                 options.UseSqlServer(connectionString,
                             x => x.MigrationsAssembly("Traffic.Data"));
             });
-
-            //services.AddIdentity<User, Role>()
-            //    .AddEntityFrameworkStores<TrafficContext>();
-           
-            //var connectionString = Cryptography.DecryptString(Configuration.GetConnectionString("DefaultConnection"));
-            //services.AddDbContext<TrafficContext>((serviceProvider, options) =>
-            //{
-            //    options.UseOracle(connectionString, o => o.MigrationsAssembly("Traffic.Data.EF")).UseUpperSnakeCaseNamingConvention();
-            //    options.UseTriggers(triggerOptions =>
-            //    {
-            //        //triggerOptions.AddTrigger<SaveCardDeliveryInfoTrigger>();
-            //        //triggerOptions.AddTrigger<SaveCardToDeliveryTrigger>();
-            //    });
-            //});
-
             // Config CORS
             services.AddCors(o => o.AddPolicy("CorsPolicy", builder =>
             {
@@ -93,22 +82,12 @@ namespace Traffic
             services.AddControllers()
               .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<LoginRequestValidator>());
 
-            // Config Authen
-            // services.AddAuthentication("BasicAuthentication").AddScheme<AuthenticationSchemeOptions, TrafficAuthenticationHandler>("BasicAuthentication", null);
+            #region jwt
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = Configuration["JwtIssuer"],
-                        ValidAudience = Configuration["JwtAudience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JwtSecurityKey"]))
-                    };
-                });
+                .AddJwtBearer();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            #endregion
+
             // AutoMapper
             services.AddSingleton(AutoMapperConfig.RegisterMappings().CreateMapper());
 
@@ -148,15 +127,6 @@ namespace Traffic
             {
                 options.Level = CompressionLevel.Fastest;
             });
-
-            // Hangfire
-            //services.AddHangfire(configuration =>
-            //{
-            //    configuration.UseStorage(new OracleStorage(connectionString));
-            //});
-
-            //services.AddHangfireServer();
-
             services.AddControllers(options => {
                 options.Filters.Add(typeof(CustomExceptionFilter));
             });
@@ -172,9 +142,6 @@ namespace Traffic
             {
                 app.UseDeveloperExceptionPage();
             }
-
-            //app.UseMiddleware<LoggerMiddleware>();
-
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 

@@ -4,6 +4,6 @@
     {
         public const string Permission = "Permission";
 
-        public const string UserId = "UserId";
+        public const string UserId = "Id";
     }
 }

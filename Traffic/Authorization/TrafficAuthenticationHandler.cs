@@ -49,14 +49,14 @@ namespace Traffic.Api.Authorization
             }
         }
 
-        public static string GetCurrentUser(IHttpContextAccessor context)
+        public static string GetCurrentUser(IHttpContextAccessor context, string claimType)
         {
             try
             {
                 string token = context.HttpContext.Request.Headers["Authorization"].ToString();
                 string tokenValue = token.Replace("Bearer", string.Empty).Trim();
                 ClaimsPrincipal claimsPrincipal = DecodeJWTToken(tokenValue, EnviromentConfig.SecretKey);
-                string userSession = claimsPrincipal.FindFirstValue(ClaimTypes.Sid);
+                string userSession = claimsPrincipal.FindFirstValue(claimType);
                 return userSession;
             }
             catch

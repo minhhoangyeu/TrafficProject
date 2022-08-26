@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Traffic.Api.Authorization;
 using Traffic.Application.Interfaces;
@@ -45,7 +46,7 @@ namespace Traffic.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetProfile()
         {
-            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor);
+            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor, ClaimTypes.Sid);
             if (!string.IsNullOrEmpty(userId))
             {
                 userId = "0";
@@ -65,7 +66,7 @@ namespace Traffic.Api.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor);
+            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor, ClaimTypes.Sid);
             if (!string.IsNullOrEmpty(userId))
             {
                 request.Id = int.Parse(userId);

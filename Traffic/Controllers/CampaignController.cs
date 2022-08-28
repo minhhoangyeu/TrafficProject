@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -22,11 +23,13 @@ namespace Traffic.Api.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
         [HttpPost]
+        [Authorize(Roles = RoleConstants.ClientRoleName)]
         public async Task<IActionResult> Create([FromForm] CampaignCreateRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-
+            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor, ClaimConstants.UserId);
+            request.OwnerBy = int.Parse(userId);
             var result = await _campaignService.Create(request);
             if (!result.IsSuccessed)
             {

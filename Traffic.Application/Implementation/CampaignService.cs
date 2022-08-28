@@ -59,6 +59,8 @@ namespace Traffic.Application.Interfaces
                 DurationOnPage = request.DurationOnPage,
                 Status = CampaignStatus.New.ToString(),
                 OwnerBy = request.OwnerBy,
+                CreatedDate = System.DateTime.Now,
+                IsDeleted = false
             };
             if (request.Document != null)
             {
@@ -67,7 +69,8 @@ namespace Traffic.Application.Interfaces
             _campaignRepository.Add(newCampaign);
             await _unitOfWork.Commit();
             var totalCredit = clientBalance - request.Budget;
-            await UpdateCredit(request.OwnerBy, totalCredit);
+            userCredit.Balance = totalCredit;
+            await UpdateCredit(userCredit);
 
             return new ApiSuccessResult<bool>();
         }
@@ -110,7 +113,7 @@ namespace Traffic.Application.Interfaces
 
         public async Task<ApiResult<PagedResult<CampaignDto>>> GetListCampaignPagingByUserId(int userId, SearchCampaignRequest request)
         {
-            var campaign =  _campaignRepository.FindAll().Where(u => u.Id == userId);
+            var campaign =  _campaignRepository.FindAll().Where(c => c.OwnerBy == userId);
             int totalRow = await campaign.CountAsync();
             var data = await campaign.Skip((request.PageIndex - 1) * request.PageSize)
                 .Take(request.PageSize)
@@ -210,7 +213,8 @@ namespace Traffic.Application.Interfaces
                 }
                 var clientBalance = userCredit.Balance;
                 var totalCredit = clientBalance - request.Budget;
-                await UpdateCredit(campaign.OwnerBy, totalCredit);
+                userCredit.Balance = totalCredit;
+                await UpdateCredit(userCredit);
             }
             else
             {
@@ -239,9 +243,11 @@ namespace Traffic.Application.Interfaces
                 }
                 var clientBalance = userCredit.Balance;
                 var totalCredit = clientBalance + campaign.Budget;
-                await UpdateCredit(campaign.OwnerBy, totalCredit);
+                userCredit.Balance = totalCredit;
+                await UpdateCredit(userCredit);
             }
             campaign.Status = CampaignStatus.New.ToString();
+            campaign.UpdatedDate = System.DateTime.Now;
             _campaignRepository.Update(campaign);
             await _unitOfWork.Commit();
             return new ApiSuccessResult<bool>();
@@ -254,13 +260,10 @@ namespace Traffic.Application.Interfaces
             return fileName;
 
         }
-        private async Task UpdateCredit(int userId, decimal totalCredit)
+        private async Task UpdateCredit(User user)
         {
-            var user = await _userRepository.FindAll().Where(u => u.Id == userId).FirstOrDefaultAsync();
-            user.Balance = totalCredit;
             _userRepository.Update(user);
             await _unitOfWork.Commit();
-
         }
 
     }

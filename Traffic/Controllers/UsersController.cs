@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Traffic.Api.Authorization;
 using Traffic.Application.Interfaces;
 using Traffic.Application.Models.User;
+using Traffic.Utilities.Constants;
 using Traffic.Utilities.Helpers;
 
 namespace Traffic.Api.Controllers
@@ -46,7 +47,7 @@ namespace Traffic.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetProfile()
         {
-            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor, ClaimTypes.Sid);
+            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor, ClaimConstants.UserId);
             if (!string.IsNullOrEmpty(userId))
             {
                 userId = "0";
@@ -66,7 +67,7 @@ namespace Traffic.Api.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor, ClaimTypes.Sid);
+            string userId = TrafficAuthenticationHandler.GetCurrentUser(this._httpContextAccessor, ClaimConstants.UserId);
             if (!string.IsNullOrEmpty(userId))
             {
                 request.Id = int.Parse(userId);
@@ -148,15 +149,6 @@ namespace Traffic.Api.Controllers
             }
             return base.Content(html, "text/html");
         }
-        [HttpGet("test-active-user")]
-        [AllowAnonymous]
-        public async Task<IActionResult> geturl(int id)
-        {
-            var user = await _userService.GetById(id);
-            string emailDecode = Cryptography.EncryptString(user.ResultObj.Email);
-            var controller = "/api/Users/active-user?code=" + emailDecode;
-            var absUrl = string.Format("{0}://{1}{2}", _httpContextAccessor.HttpContext.Request.Scheme, _httpContextAccessor.HttpContext.Request.Host, controller);
-            return Ok(absUrl);
-        }
+        
     }
 }

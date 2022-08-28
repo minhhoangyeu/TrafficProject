@@ -18,6 +18,7 @@ using Traffic.Application.Dtos;
 using static Traffic.Utilities.Enums;
 using System.Net.Http.Headers;
 using System.IO;
+using Traffic.Utilities.Constants;
 
 namespace Traffic.Application.Implementation
 {
@@ -52,24 +53,23 @@ namespace Traffic.Application.Implementation
                 return new ApiErrorResult<UserDto>("Tài khoản đã bị khóa");
             if (user.Status == UserStatus.Pending.ToString())
                 return new ApiErrorResult<UserDto>("Tài khoản chưa được kích hoạt");
-            DateTime expirationDate = DateTime.Now.Date.AddMinutes(EnviromentConfig.ExpirationInMinutes);
-            long expiresAt = (long)(expirationDate - new DateTime(1970, 1, 1)).TotalSeconds;
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(EnviromentConfig.SecretKey);
-            var tokenDescriptor = new SecurityTokenDescriptor
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(EnviromentConfig.SecretKey));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                        new Claim(ClaimTypes.Sid,user.Id.ToString()),
+                        new Claim(ClaimConstants.UserId,user.Id.ToString()),
                         new Claim(ClaimTypes.Email,user.Email),
                         new Claim(ClaimTypes.Role, user.Role),
                         new Claim(ClaimTypes.Name, request.UserName)
-                }),
-                Expires = expirationDate,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
             };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            string writeToken = tokenHandler.WriteToken(token);
+
+            var token = new JwtSecurityToken(EnviromentConfig.Issuer, EnviromentConfig.Audience,
+              claims,
+              expires: DateTime.Now.AddMinutes(15),
+              signingCredentials: credentials);
+            var writeToken =new  JwtSecurityTokenHandler().WriteToken(token);
+            
             //using mapper repplace for this manual
             UserDto dto = new UserDto();
             dto.Id = user.Id;
@@ -129,7 +129,7 @@ namespace Traffic.Application.Implementation
             if (user == null)
                 return new ApiErrorResult<bool>("Tài khoản hoặc email không tồn tại");
             // Sending email for user
-
+            await SendMailForgotPassword(user);
             return new ApiSuccessResult<bool>();
         }
 
@@ -396,24 +396,43 @@ namespace Traffic.Application.Implementation
             var message = BuildActivateUserTemplate(name, absUrl);
             await _emailService.SendEmail(email, "Kích hoạt tài khoản", message);
         }
+        private async Task SendMailForgotPassword(User user)
+        {
+            string password = Cryptography.DecryptString(user.PasswordHash);
+            var message = BuildForgotPasswordTemplate(password, user.UserName);
+            await _emailService.SendEmail(user.Email, "Lấy lại mật khẩu", message);
+        }
         private string BuildActivateUserTemplate(string name, string url)
         {
             var html = new StringBuilder();
             html.Append("<h1>Welcome!</h1>" +
-               "< p > Hello < strong style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' >" +
+               "<p> Hello <strong style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' >" +
                name +
-               "</ strong > ! < br />< br /> Thank you for registering on our platform.You're almost ready to start.<br /><br />Simply click the button below to confirm your email address and active your account.</p>" +
-               "< table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; margin: 30px auto; padding: 0; text-align: center; width: 100%;' width = '100%' cellspacing = '0' cellpadding = '0' align = 'center' >" +
-               "< tbody > < tr >< td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' align = 'center' >" +
-               "< table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' border = '0' width = '100%' cellspacing = '0' cellpadding = '0' >" +
-               "< tbody > < tr > < td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' align = 'center' >" +
-               "< table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' border = '0' cellspacing = '0' cellpadding = '0' >" +
-               "< tbody > < tr > < td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' >< a href='" +
+               "</strong> ! <br /><br /> Thank you for registering on our platform.You're almost ready to start.<br /><br />Simply click the button below to confirm your email address and active your account.</p>" +
+               "<table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; margin: 30px auto; padding: 0; text-align: center; width: 100%;' width = '100%' cellspacing = '0' cellpadding = '0' align = 'center' >" +
+               "<tbody> <tr><td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' align = 'center' >" +
+               "<table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' border = '0' width = '100%' cellspacing = '0' cellpadding = '0'>" +
+               "<tbody> <tr> <td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' align = 'center' >" +
+               "<table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' border = '0' cellspacing = '0' cellpadding = '0'>" +
+               "<tbody> <tr> <td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' ><a href='" +
                url +
-               "' style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; border-radius: 3px; color: #fff; display: inline-block; text-decoration: none; background-color: #16a1fd; border-top: 10px solid #16a1fd; border-right: 18px solid #16a1fd; border-bottom: 10px solid #16a1fd; border-left: 18px solid #16a1fd;' target = '_blank' > Confirm Email Address </ a ></ td >" +
-               "</ tr > </ tbody > </ table > </ td > </ tr > </ tbody > </ table > </ td > </ tr > </ tbody > </ table >" +
-               "< hr style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' />" +
-               "< p style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; color: #74787e; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left; margin-bottom: 0; padding-bottom: 0;' > Best Regards, < br /> Traffic Teams </ p >"
+               "' style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; border-radius: 3px; color: #fff; display: inline-block; text-decoration: none; background-color: #16a1fd; border-top: 10px solid #16a1fd; border-right: 18px solid #16a1fd; border-bottom: 10px solid #16a1fd; border-left: 18px solid #16a1fd;' target = '_blank' > Confirm Email Address </a></td>" +
+               "</tr> </tbody> </table> </td> </tr> </tbody> </table> </td> </tr> </tbody> </table>" +
+               "<hr style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' />" +
+               "<p style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; color: #74787e; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left; margin-bottom: 0; padding-bottom: 0;' > Best Regards, <br/> Traffic Teams </p>"
+               );
+            return html.ToString();
+        }
+        private string BuildForgotPasswordTemplate(string password, string userName)
+        {
+            var html = new StringBuilder();
+            html.Append("<p> Hello <strong style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' >" +
+               userName +
+               "</strong> ! <br /><br /> Thông tin mật khẩu của bạn là:"+ password +"<br /><br /> </p> " +
+               "<table style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; margin: 30px auto; padding: 0; text-align: center; width: 100%;' width = '100%' cellspacing = '0' cellpadding = '0' align = 'center' >" +
+               "<tbody> <tr><td style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' align = 'center' >" +
+               "<hr style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box;' />" +
+               "<p style = 'font-family: Avenir,Helvetica,sans-serif; box-sizing: border-box; color: #74787e; font-size: 16px; line-height: 1.5em; margin-top: 0; text-align: left; margin-bottom: 0; padding-bottom: 0;' > Best Regards, <br/> Traffic Teams </p>"
                );
             return html.ToString();
         }

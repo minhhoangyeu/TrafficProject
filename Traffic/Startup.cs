@@ -83,8 +83,25 @@ namespace Traffic
               .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<LoginRequestValidator>());
 
             #region jwt
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer();
+            // Configure Authentication
+            services.AddAuthentication(auth =>
+            {
+                auth.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                auth.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = Configuration["JwtConfig:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = Configuration["JwtConfig:Audience"],
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JwtConfig:SecretKey"]))
+                };
+            });
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             #endregion
 
@@ -127,7 +144,8 @@ namespace Traffic
             {
                 options.Level = CompressionLevel.Fastest;
             });
-            services.AddControllers(options => {
+            services.AddControllers(options =>
+            {
                 options.Filters.Add(typeof(CustomExceptionFilter));
             });
 
@@ -152,20 +170,20 @@ namespace Traffic
 
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Traffic API v1"));
-          
+
             app.UseCors("CorsPolicy");
 
             app.UseResponseCompression();
 
             app.UseRequestLocalization();
             // custom jwt auth middleware
-            app.UseMiddleware<JwtMiddleware>();
+            //app.UseMiddleware<JwtMiddleware>();
             app.UseMiddleware<ErrorHandlerMiddleware>();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
-          
+
         }
     }
 }

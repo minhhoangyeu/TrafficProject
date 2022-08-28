@@ -1,13 +1,16 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace Traffic.Application.Models.Campaign
 {
     public class CampaignCreateRequest
     {
+        [Required]
         public string Name { get; set; }
+        [Required]
         public int AverageCompletionTime { get; set; }
         public decimal BidPerTaskCompletion { get; set; }
         public decimal Budget { get; set; }

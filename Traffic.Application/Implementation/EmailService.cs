@@ -52,7 +52,7 @@ namespace Traffic.Application.Interfaces
         {
 
             ////var apiKey = Environment.GetEnvironmentVariable("NAME_OF_THE_ENVIRONMENT_VARIABLE_FOR_YOUR_SENDGRID_KEY");
-            var client = new SendGridClient("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");
+            var client = new SendGridClient("");
             var from = new EmailAddress("traffic@noreply.com", "Traffic project");
             ////var subject = "Sending with SendGrid is Fun";
             var to = new EmailAddress(email, "Traffic User");
@@ -74,7 +74,7 @@ namespace Traffic.Application.Interfaces
                 mailMsg.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(message, null, MediaTypeNames.Text.Html));
                 using (SmtpClient smtpClient = new SmtpClient("smtp.sendgrid.net", 587))
                 {
-                    smtpClient.Credentials = new NetworkCredential("apikey", "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");
+                    smtpClient.Credentials = new NetworkCredential("apikey", "");
                     smtpClient.Send(mailMsg);
                 }
             }

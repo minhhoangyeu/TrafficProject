@@ -106,14 +106,15 @@ namespace Traffic.Application.Interfaces
             dto.LinkPage = campaign.LinkPage;
             dto.DurationOnPage = campaign.DurationOnPage;
             dto.OwnerBy = campaign.OwnerBy;
-            dto.Status = campaign.Status;;
+            dto.Status = campaign.Status;
             dto.Document = _fileStorageService.GetFileUrl(campaign.Document);
+            dto.CreatedDate = campaign.CreatedDate;
             return new ApiSuccessResult<CampaignDto>(dto);
         }
 
-        public async Task<ApiResult<PagedResult<CampaignDto>>> GetListCampaignPagingByUserId(int userId, SearchCampaignRequest request)
+        public async Task<ApiResult<PagedResult<CampaignDto>>> GetListCampaignPagingByUserId(GetListCampaignPagingByUserIdRequest request)
         {
-            var campaign =  _campaignRepository.FindAll().Where(c => c.OwnerBy == userId);
+            var campaign =  _campaignRepository.FindAll().Where(c => c.OwnerBy == request.UserId);
             int totalRow = await campaign.CountAsync();
             var data = await campaign.Skip((request.PageIndex - 1) * request.PageSize)
                 .Take(request.PageSize)
@@ -130,7 +131,8 @@ namespace Traffic.Application.Interfaces
                     DurationOnPage = x.DurationOnPage,
                     Status = x.Status,
                     OwnerBy = x.OwnerBy,
-                    Document = _fileStorageService.GetFileUrl(x.Document)
+                    Document = _fileStorageService.GetFileUrl(x.Document),
+                    CreatedDate = x.CreatedDate
 
                 }).ToListAsync();
 
@@ -169,7 +171,8 @@ namespace Traffic.Application.Interfaces
                     DurationOnPage = x.DurationOnPage,
                     Status = x.Status,
                     OwnerBy = x.OwnerBy,
-                    Document = _fileStorageService.GetFileUrl(x.Document)
+                    Document = _fileStorageService.GetFileUrl(x.Document),
+                    CreatedDate = x.CreatedDate
 
                 }).ToListAsync();
             var pagedResult = new PagedResult<CampaignDto>()
@@ -228,8 +231,7 @@ namespace Traffic.Application.Interfaces
 
         public async Task<ApiResult<bool>> UpdateStatus(int campaignId, string status)
         {
-            var query = _campaignRepository.FindAll();
-            var campaign = query.FirstOrDefault(u => u.Id == campaignId);
+            var campaign = _campaignRepository.FindAll().FirstOrDefault(u => u.Id == campaignId);
             if (campaign == null)
             {
                 return new ApiErrorResult<bool>("Chiến dịch không tồn tại");
@@ -246,7 +248,7 @@ namespace Traffic.Application.Interfaces
                 userCredit.Balance = totalCredit;
                 await UpdateCredit(userCredit);
             }
-            campaign.Status = CampaignStatus.New.ToString();
+            campaign.Status = status;
             campaign.UpdatedDate = System.DateTime.Now;
             _campaignRepository.Update(campaign);
             await _unitOfWork.Commit();

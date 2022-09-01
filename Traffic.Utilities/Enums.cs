@@ -4,24 +4,11 @@ namespace Traffic.Utilities
 {
     public class Enums
     {
-        public enum Status
+        public enum DoTaskStatus
         {
-            SUCCESS,
-            ERROR,
-            DELIVERED
-        }
-        public enum Result
-        {
-            SUCCESS,
-            UNAUTHORIZED,
-            FORBIDDEN,
-            ERROR
-        }
-        public enum Severity
-        {
-            HIGH,
-            MEDIUM,
-            LOW
+            Open,
+            Processing,
+            Completed
         }
         public enum UserStatus
         {

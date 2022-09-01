@@ -14,7 +14,7 @@ namespace Traffic.Application.Interfaces
         Task<ApiResult<bool>> Create(CampaignCreateRequest request);
         Task<ApiResult<bool>> Update(CampaignUpdateRequest request);
         Task<ApiResult<PagedResult<CampaignDto>>> SearchCampaignPaging(SearchCampaignRequest request);
-        Task<ApiResult<PagedResult<CampaignDto>>> GetListCampaignPagingByUserId(int userId,SearchCampaignRequest request);
+        Task<ApiResult<PagedResult<CampaignDto>>> GetListCampaignPagingByUserId(GetListCampaignPagingByUserIdRequest request);
         Task<ApiResult<CampaignDto>> GetById(int id);
         Task<ApiResult<bool>> Delete(int id);
         Task<ApiResult<bool>> UpdateStatus(int campaignId, string status);

@@ -10,13 +10,12 @@ namespace Traffic.Data.Entities
     public class UserCampaign : DomainEntity<int>, ITracking
     {
         public int CampaignId { get; set; } //int (FK)
-        [StringLength(250)]
-        public int ImplementBy { get; set; } // FK
+        public int? ImplementBy { get; set; } // FK
         [StringLength(512)]
         public string Token { get; set; }   //Unique, Hash
         public bool IsExpiredToken { get; set; }
         public bool IsDoneTask { get; set; }
-
+        public string  Status { get; set; }
         [ForeignKey("CampaignId")]
         public virtual Campaign Campaign { set; get; }
         [ForeignKey("ImplementBy")]

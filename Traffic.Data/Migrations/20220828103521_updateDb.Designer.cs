@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Traffic.Data;
 
 namespace Traffic.Data.Migrations
 {
     [DbContext(typeof(TrafficContext))]
-    partial class TrafficContextModelSnapshot : ModelSnapshot
+    [Migration("20220828103521_updateDb")]
+    partial class updateDb
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,18 +71,9 @@ namespace Traffic.Data.Migrations
                     b.Property<int>("OwnerBy")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("RemainingBudget")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("Status")
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
-
-                    b.Property<int>("TotalFinishedTask")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalView")
-                        .HasColumnType("int");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
@@ -251,9 +244,6 @@ namespace Traffic.Data.Migrations
 
                     b.Property<bool>("IsExpiredToken")
                         .HasColumnType("bit");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Token")
                         .HasMaxLength(512)

@@ -15,6 +15,9 @@ namespace Traffic.Data.Entities
         public int AverageCompletionTime { get; set; }
         public decimal BidPerTaskCompletion { get; set; }
         public decimal Budget { get; set; }
+        public decimal RemainingBudget { get; set; }
+        public int TotalView { get; set; }
+        public int TotalFinishedTask { get; set; }
         [StringLength(512)]
         public string Document { get; set; }
         [StringLength(512)]

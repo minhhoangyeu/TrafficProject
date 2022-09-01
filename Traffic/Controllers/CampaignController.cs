@@ -82,6 +82,19 @@ namespace Traffic.Api.Controllers
             var result = await _campaignService.UpdateStatus(campaignId, status);
             return Ok(result);
         }
-
+       
+        [HttpGet("searchcampaign")]
+        public async Task<IActionResult> SearchCampaign([FromQuery] SearchCampaignRequest request)
+        {
+            var campaign = await _campaignService.SearchCampaignPaging(request);
+            return Ok(campaign);
+        }
+        [HttpGet("getlistcampaign")]
+        public async Task<IActionResult> GetListCampaignPaging([FromQuery] GetListCampaignPagingByUserIdRequest request)
+        {
+            var campaign = await _campaignService.GetListCampaignPagingByUserId(request);
+            return Ok(campaign);
+        }
+        
     }
 }

@@ -22,6 +22,7 @@ namespace Traffic.Data
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
             modelBuilder.Entity<User>()
                 .HasIndex(b => b.UserName)
                  .IsUnique()
@@ -43,16 +44,7 @@ namespace Traffic.Data
                .IsUnique()
               .HasFilter(null);
      
-            modelBuilder.Entity<CampaignHistory>()
-                        .HasOne(m => m.User)
-                        .WithMany()
-                        .HasForeignKey(m => m.ImplementBy)
-                        .OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<UserCampaign>()
-                        .HasOne(m => m.User)
-                        .WithMany()
-                        .HasForeignKey(m => m.ImplementBy)
-                        .OnDelete(DeleteBehavior.Restrict);
+            
         }
         public DbSet<User> Users { set; get; }
         public DbSet<Campaign> Campaigns { set; get; }

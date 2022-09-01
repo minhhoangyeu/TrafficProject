@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Traffic.Data;
 
 namespace Traffic.Data.Migrations
 {
     [DbContext(typeof(TrafficContext))]
-    partial class TrafficContextModelSnapshot : ModelSnapshot
+    [Migration("20220901020501_addnewcolunm_remainingBudget")]
+    partial class addnewcolunm_remainingBudget
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

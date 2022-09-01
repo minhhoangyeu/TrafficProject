@@ -10,7 +10,7 @@ namespace Traffic.Data.Entities
     public class CampaignHistory : DomainEntity<int>, ITracking
     {
         public int CampaignId { get; set; }// Unique FK
-        public int ImplementBy { get; set; }
+        public int? ImplementBy { get; set; }
         [StringLength(16)]
         public string Status { get; set; }
         public bool IsDeleted { get; set; }

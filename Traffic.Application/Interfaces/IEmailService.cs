@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using SendGrid;
+using System.Threading.Tasks;
 using Traffic.Application.Models.SendEmail;
 
 namespace Traffic.Application.Interfaces

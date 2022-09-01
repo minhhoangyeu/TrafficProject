@@ -12,6 +12,9 @@ using static Traffic.Utilities.Enums;
 using Traffic.Application.Models.SendEmail;
 using System.Net.Mail;
 using System.Net;
+using SendGrid;
+using SendGrid.Helpers.Mail;
+using System.Net.Mime;
 
 namespace Traffic.Application.Interfaces
 {
@@ -24,7 +27,7 @@ namespace Traffic.Application.Interfaces
             _configuration = configuration;
         }
 
-        public  Task SendEmail(string email, string subject, string message)
+        public  Task SendEmail1(string email, string subject, string message)
         {
             SmtpClient client = new SmtpClient(_configuration["MailSettings:Server"])
             {
@@ -45,81 +48,38 @@ namespace Traffic.Application.Interfaces
             client.Send(mailMessage);
             return Task.CompletedTask;
         }
+        public async Task<Response> SendEmail2(string email, string subject, string message)
+        {
 
+            ////var apiKey = Environment.GetEnvironmentVariable("NAME_OF_THE_ENVIRONMENT_VARIABLE_FOR_YOUR_SENDGRID_KEY");
+            var client = new SendGridClient("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");
+            var from = new EmailAddress("traffic@noreply.com", "Traffic project");
+            ////var subject = "Sending with SendGrid is Fun";
+            var to = new EmailAddress(email, "Traffic User");
+            ////var plainTextContent = "and easy to do anywhere, even with C#";
+            ////var htmlContent = "<strong>and easy to do anywhere, even with C#</strong>";
+            var msg = MailHelper.CreateSingleEmail(from, to, subject,"", message);
+            var response = await client.SendEmailAsync(msg);
+            return response;
+        }
 
-
-        //public async Task<SendEmailModel> SendMail()
-        //{
-        //    var result = new SendMailResponseModel
-        //    {
-        //        Status = Status.SUCCESS.ToString()
-        //    };
-
-        //    try
-        //    {
-        //        var endpoint = $"{_configuration["SMT:BaseUrl"]}{_configuration["SMT:Endpoint:Email"]}";
-        //        var httpClient = HttpClientExtensions.SMTClient(_configuration);
-
-        //        // get total PCIDs with non-PostCode
-        //        var cards = await _cardManagementService.GetPCIDsWithNonPostCode();
-        //        result.TotalCard = cards.Count;
-
-        //        var data = new SendMailDto
-        //        {
-        //            Recipient = _configuration["SMT:Recipients"].Split(';'),
-        //            MessageCode = _configuration["SMT:SendEmailMessageCode"],
-        //            Subject = _configuration["SMT:Subject"],
-        //            Content = EmailConstants.VNPOST.Content.Replace("{total_count}", cards.Count.ToString()).Replace("{table_data}", BuidTemplate(cards))
-        //        };
-
-        //        await HttpClientExtensions.PostAsync<HttpResponseMessage>(httpClient, endpoint, data);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        result.Status = Status.ERROR.ToString();
-        //        result.Description = ex.Message;
-        //        _logger.LogError(CommonConstants.OccuredErrorJob, nameof(SendMail), ex.Message);
-        //    }
-        //    finally
-        //    {
-        //        // write log
-        //        ActivityInfo activityInfo = new ActivityInfo
-        //        {
-        //            Severity = Severity.LOW.ToString(),
-        //            Action = "Job send email cards have no Postcode",
-        //            Data = {
-        //                Request = null,
-        //                Response = result
-        //            },
-        //            Result = result.Status
-        //        };
-        //        activityInfo.LogActivity(_httpContextAccessor, _logger);
-        //    }
-
-        //    return result;
-        //}
-
-        //private string BuidTemplate(List<NonPostCodeDto> items)
-        //{
-        //    var html = new StringBuilder();
-        //    html.Append("<table style='border-collapse: collapse;border: 1px solid black;'>" +
-        //                    "<tr>" +
-        //                            "<th style='text-align: center; border: 1px solid black;'>" +
-        //                                "PCID" +
-        //                            "</th>" +
-        //                            "<th style='text-align: center; border: 1px solid black;'>" +
-        //                                "Manufacture Date" +
-        //                            "</th>" +
-        //                    "</tr>");
-
-        //    foreach(var item in items)
-        //    {
-        //        html.Append("<tr><td style='text-align: center; border: 1px solid black;'>" + item.PCID + "</td><td style='text-align: center; border: 1px solid black;'>" + item.ManufactureDate + "</td></tr>");
-        //    }
-
-        //    html.Append("</table>");
-
-        //    return html.ToString();
-        //}
+        public Task SendEmail(string email, string subject, string message)
+        {
+            using (MailMessage mailMsg = new MailMessage())
+            {
+                
+                mailMsg.To.Add(new MailAddress(email, "Traffic User"));
+                mailMsg.From = new MailAddress("hanhan.nguyengia@gmail.com", "Admin Traffic project");
+                mailMsg.Subject = subject;
+                mailMsg.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(message, null, MediaTypeNames.Text.Html));
+                using (SmtpClient smtpClient = new SmtpClient("smtp.sendgrid.net", 587))
+                {
+                    smtpClient.Credentials = new NetworkCredential("apikey", "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");
+                    smtpClient.Send(mailMsg);
+                }
+            }
+            return Task.CompletedTask;
+        }
+      
     }
 }

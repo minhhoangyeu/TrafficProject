@@ -5,8 +5,9 @@ using Traffic.Application.Models.Common;
 
 namespace Traffic.Application.Models.Campaign
 {
-    public class GetListPagingRequest : PagingRequestBase
+    public class GetListPagingByClientIdRequest : PagingRequestBase
     {
+        public int ClientId { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
     }

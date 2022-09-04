@@ -90,6 +90,7 @@ namespace Traffic.Application.Interfaces
             userCredit.Balance = userCredit.Balance + campaign.BidPerTaskCompletion;
             await UpdateUserCredit(userCredit);
             campaign.RemainingBudget = campaign.RemainingBudget - campaign.BidPerTaskCompletion;
+            campaign.TotalFinishedTask = campaign.TotalFinishedTask + 1;
             await UpdateRemainingCampaign(campaign);
             userCampaign.IsDoneTask = true;
             userCampaign.IsExpiredToken = true;

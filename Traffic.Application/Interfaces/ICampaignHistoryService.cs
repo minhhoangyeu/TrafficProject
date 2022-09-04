@@ -12,6 +12,7 @@ namespace Traffic.Application.Interfaces
     {
 
         Task<ApiResult<bool>> Create(CampaignHistoryCreateRequest request);
-        Task<ApiResult<PagedResult<CampaignHistoryDto>>> GetListPaging(GetListPagingRequest request);
+        Task<ApiResult<PagedResult<CampaignHistoryDto>>> GetListPagingByUser(GetListPagingRequest request,int userId);
+        Task<ApiResult<PagedResult<CampaignHistoryClientDto>>> GetListPagingByClient(GetListPagingRequest request,int userId);
     }
 }

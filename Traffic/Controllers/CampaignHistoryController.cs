@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using Traffic.Application.Interfaces;
+using Traffic.Application.Models.Campaign;
 
 namespace Traffic.Api.Controllers
 {
@@ -12,6 +14,12 @@ namespace Traffic.Api.Controllers
         public CampaignHistoryController(ICampaignHistoryService campaignHistoryService)
         {
             _campaignHistoryService = campaignHistoryService;
+        }
+        [HttpGet("getlist")]
+        public async Task<IActionResult> GetListPaging([FromQuery] GetListPagingRequest request)
+        {
+            var campaign = await _campaignHistoryService.GetListPaging(request);
+            return Ok(campaign);
         }
     }
 }

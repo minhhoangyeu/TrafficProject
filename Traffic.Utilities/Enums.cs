@@ -8,7 +8,8 @@ namespace Traffic.Utilities
         {
             Open,
             Processing,
-            Completed
+            Completed,
+            Failed
         }
         public enum UserStatus
         {

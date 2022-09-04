@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Traffic.Application.Models.Common;
 
-namespace Traffic.Application.Models.UserCampaign
+namespace Traffic.Application.Models.Campaign
 {
-    public class UserEarningRequest
+    public class GetListPagingRequest : PagingRequestBase
     {
         public int UserId { get; set; }
         public DateTime? FromDate { get; set; }

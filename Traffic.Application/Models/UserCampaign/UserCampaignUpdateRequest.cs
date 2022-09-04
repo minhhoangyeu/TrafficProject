@@ -14,6 +14,6 @@ namespace Traffic.Application.Models.Campaign
         [Required]
         public int ImplementBy { get; set; }
         [Required]
-        public string Status { get; set; }
+        public string Token { get; set; }
     }
 }

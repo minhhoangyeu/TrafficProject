@@ -1,9 +1,14 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using Traffic.Application.Dtos;
 using Traffic.Application.Models.Campaign;
+using Traffic.Application.Models.Common;
 using Traffic.Data.Entities;
 using Traffic.Data.Interfaces;
 
@@ -23,19 +28,54 @@ namespace Traffic.Application.Interfaces
             _configuration = configuration;
         }
 
-        public void Create(CampaignHistoryCreateRequest model)
+        public async Task<ApiResult<bool>> Create(CampaignHistoryCreateRequest request)
         {
-            throw new NotImplementedException();
+            CampaignHistory campaignHistory = new CampaignHistory()
+            {
+                CampaignId = request.CampaignId,
+                ImplementBy = request.ImplementBy,
+                Status = request.Status,
+            };
+            _campaignHistoryRepository.Add(campaignHistory);
+            await _unitOfWork.Commit();
+            return new ApiSuccessResult<bool>();
         }
 
-        public void Delete(int id)
+        public async Task<ApiResult<PagedResult<CampaignHistoryDto>>> GetListPaging(GetListPagingRequest request)
         {
-            throw new NotImplementedException();
-        }
+            var query = _campaignHistoryRepository.FindAll();
+            if (request.UserId > 0)
+            {
+                query = query.Where(x => x.ImplementBy.Equals(request.UserId));
+            }
+            if (request.FromDate != null)
+            {
+                query = query.Where(x => x.CreatedDate >= request.FromDate);
+            }
+            if (request.ToDate != null)
+            {
+                query = query.Where(x => x.CreatedDate <= request.ToDate);
+            }
+            int totalRow = await query.CountAsync();
+            var data = await query.Skip((request.PageIndex - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .Select(x => new CampaignHistoryDto()
+                {
+                    Id = x.Id,
+                    CampaignId = x.CampaignId,
+                    ImplementBy = (int)x.ImplementBy,
+                    Status = x.Status,
+                    CreatedDate = x.CreatedDate
 
-        public void Update(CampaignHistoryUpdateRequest model)
-        {
-            throw new NotImplementedException();
+                }).ToListAsync();
+            var pagedResult = new PagedResult<CampaignHistoryDto>()
+            {
+                TotalRecords = totalRow,
+                PageIndex = request.PageIndex,
+                PageSize = request.PageSize,
+                Items = data
+            };
+            return new ApiSuccessResult<PagedResult<CampaignHistoryDto>>(pagedResult);
         }
     }
 }

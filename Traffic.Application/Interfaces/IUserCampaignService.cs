@@ -15,6 +15,6 @@ namespace Traffic.Application.Interfaces
         Task<ApiResult<CampaignDto>> ViewTaskDetail(int campaignId);
         Task<ApiResult<bool>> FinishTask(UserCampaignUpdateRequest request);
         Task<ApiResult<PagedResult<CampaignDto>>> GetTaskListPaging(GetListCampaignPagingByUserIdRequest request);
-        Task<ApiResult<bool>> ViewEarning(UserEarningRequest request);
+        Task<ApiResult<UserEarningDto>> ViewEarning(UserEarningRequest request);
     }
 }

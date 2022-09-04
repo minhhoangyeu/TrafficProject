@@ -47,7 +47,20 @@ namespace Traffic.Application.Interfaces
 
         public async Task<ApiResult<PagedResult<CampaignHistoryDto>>> GetListPagingByUser(GetListPagingRequest request, int userId)
         {
-            var query = _campaignHistoryRepository.FindAll();
+            var query = from ucam in _userCampaignRepository.FindAll()
+                        join cam in _campaignRepository.FindAll()
+                        on ucam.CampaignId equals cam.Id into MatchedCampaigns
+                        from match in MatchedCampaigns
+                        select new
+                        {
+                            match.Id,
+                            match.Name,
+                            match.BidPerTaskCompletion,
+                            ucam.Status,
+                            ucam.CreatedDate,
+                            ucam.ImplementBy
+                        };
+
             query = query.Where(x => x.ImplementBy.Equals(userId));
             if (request.FromDate != null)
             {
@@ -62,12 +75,11 @@ namespace Traffic.Application.Interfaces
                 .Take(request.PageSize)
                 .Select(x => new CampaignHistoryDto()
                 {
-                    Id = x.Id,
-                    CampaignId = x.CampaignId,
-                    ImplementBy = (int)x.ImplementBy,
+                    CampaignId = x.Id,
+                    Name =x.Name,
+                    BidPerTaskCompletion =x.BidPerTaskCompletion,
                     Status = x.Status,
                     CreatedDate = x.CreatedDate
-
                 }).ToListAsync();
             var pagedResult = new PagedResult<CampaignHistoryDto>()
             {
